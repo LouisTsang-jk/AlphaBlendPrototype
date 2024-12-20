@@ -53,14 +53,12 @@
         </div>
     </div>
 
-    <script async src="https://docs.opencv.org/4.10.0/opencv.js" onload="onOpenCvReady();" type="text/javascript"></script>
     <script>
         let inputCanvas, outputCanvas, checkerboardCanvas;
         let inputCtx, outputCtx, checkerboardCtx;
         let currentImage = null;
 
         function onOpenCvReady() {
-            console.log('OpenCV.js is ready');
             initializeCanvases();
             setupEventListeners();
             drawCheckerboard();
@@ -137,33 +135,26 @@
 
             const threshold = parseInt(document.getElementById('threshold').value);
             
-            // Read image data using OpenCV
-            let src = cv.imread(inputCanvas);
-            let dst = new cv.Mat();
+            // 获取输入图像数据
+            inputCtx.drawImage(currentImage, 0, 0);
+            const imageData = inputCtx.getImageData(0, 0, inputCanvas.width, inputCanvas.height);
+            const data = imageData.data;
             
-            // Convert to grayscale
-            cv.cvtColor(src, dst, cv.COLOR_RGBA2GRAY);
+            // 处理每个像素
+            for (let i = 0; i < data.length; i += 4) {
+                // 计算亮度 (使用相对亮度公式)
+                const brightness = Math.round(
+                    0.299 * data[i] +      // R
+                    0.587 * data[i + 1] +  // G
+                    0.114 * data[i + 2]    // B
+                );
+                
+                // 基于阈值设置透明度
+                data[i + 3] = brightness > threshold ? 0 : 255;
+            }
             
-            // Create alpha channel based on threshold
-            let channels = new cv.MatVector();
-            cv.split(src, channels);
-            let alpha = new cv.Mat();
-            
-            // Create alpha mask based on brightness
-            cv.threshold(dst, alpha, threshold, 255, cv.THRESH_BINARY_INV);
-            
-            // Merge the alpha channel
-            channels.set(3, alpha);
-            cv.merge(channels, dst);
-            
-            // Display result
-            cv.imshow(outputCanvas, dst);
-            
-            // Cleanup
-            src.delete();
-            dst.delete();
-            alpha.delete();
-            channels.delete();
+            // 显示结果
+            outputCtx.putImageData(imageData, 0, 0);
         }
 
         function handleThresholdChange(e) {
@@ -179,6 +170,9 @@
             link.href = outputCanvas.toDataURL('image/png');
             link.click();
         }
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', onOpenCvReady);
     </script>
 </body>
 </html> 
