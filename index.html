@@ -53,6 +53,10 @@
                 <input type="range" id="lowerThreshold" min="0" max="255" value="0" step="1">
                 <span id="lowerThresholdValue">0</span>
             </div>
+            <div class="slider-container">
+                <label for="bgColor">背景颜色 (rgba 或 16进制):</label>
+                <input type="text" id="bgColor" placeholder="例如: #ff0000 或 rgba(255,0,0,1)">
+            </div>
             <button id="downloadBtn">Download PNG</button>
             <input type="file" id="fileInput" accept="image/*">
         </div>
@@ -84,6 +88,7 @@
             document.getElementById('threshold').addEventListener('input', handleThresholdChange);
             document.getElementById('lowerThreshold').addEventListener('input', handleThresholdChange);
             document.getElementById('downloadBtn').addEventListener('click', downloadResult);
+            document.getElementById('bgColor').addEventListener('input', updateBackground);
         }
 
         function drawCheckerboard() {
@@ -181,6 +186,30 @@
             link.download = 'result.png';
             link.href = outputCanvas.toDataURL('image/png');
             link.click();
+        }
+
+        function updateBackground() {
+            const bgColorValue = document.getElementById('bgColor').value.trim();
+            if (!bgColorValue) {
+                // 如果输入框为空，重绘棋盘背景
+                drawCheckerboard();
+                return;
+            }
+
+            try {
+                // 测试颜色值是否有效
+                const testCanvas = document.createElement('canvas');
+                const testCtx = testCanvas.getContext('2d');
+                testCtx.fillStyle = bgColorValue;
+                
+                // 如果颜色值有效，使用纯色背景
+                checkerboardCtx.clearRect(0, 0, checkerboardCanvas.width, checkerboardCanvas.height);
+                checkerboardCtx.fillStyle = bgColorValue;
+                checkerboardCtx.fillRect(0, 0, checkerboardCanvas.width, checkerboardCanvas.height);
+            } catch (e) {
+                // 如果颜色值无效，保持原有棋盘背景
+                drawCheckerboard();
+            }
         }
 
         // 页面加载完成后初始化
